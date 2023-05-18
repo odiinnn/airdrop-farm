@@ -1,3 +1,79 @@
 {
-  "extends": "next/core-web-vitals"
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "@jetbrains",
+        "@jetbrains/eslint-config/node",
+        "plugin:react/recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:sonarjs/recommended",
+        "plugin:@typescript-eslint/recommended",
+        "prettier",
+        "plugin:@next/next/recommended"
+    ],
+    "parserOptions": {
+        "ecmaFeatures": {
+            "jsx": true
+        },
+        "ecmaVersion": 2020,
+        "sourceType": "module"
+    },
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+        "react",
+        "sonarjs",
+        "@typescript-eslint",
+        "eslint-plugin-import",
+        "simple-import-sort"
+    ],
+    "settings": {
+        "react": {
+            "version": "detect"
+        }
+    },
+    "rules": {
+        "simple-import-sort/imports": ["error", {
+            "groups": [
+                // Packages `react` related packages come first.
+                ["^react","^next", "^@?\\w"],
+                // Internal packages.
+                ["^(@|components)(/.*|$)"],
+                // Side effect imports.
+                ["^\\u0000"],
+                // Parent imports. Put `..` last.
+                ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
+                // Other relative imports. Put same-folder imports and `.` last.
+                ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
+                // Style imports.
+                ["^.+\\.?(styles)$"]
+            ]
+        }],
+        "semi-spacing": "error",
+        "import/newline-after-import": "error",
+        "simple-import-sort/exports": "error",
+        "linebreak-style": "off",
+        "quotes": ["error", "single"],
+        "max-len": "off",
+        "no-return-assign": "off",
+        "no-magic-numbers": "warn",
+        "valid-jsdoc": "off",
+        "radix": "off",
+        "no-native-reassign": "off",
+        "multiline-ternary": "off",
+        "no-shadow": "warn",
+        "no-multiple-empty-lines": "error",
+        "no-use-before-define": "off",
+        "react/prop-types": "off",
+        "no-catch-shadow": "off",
+        "no-nested-ternary": "off",
+        "prefer-template": "error",
+        "prefer-spread": "error",
+        "prefer-arrow-callback": "error",
+        "no-var": "error",
+        "arrow-spacing": "error",
+        "complexity": ["error", { "max": 15 }]
+    }
 }
