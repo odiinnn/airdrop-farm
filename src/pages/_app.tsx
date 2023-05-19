@@ -8,7 +8,7 @@ type ExtendedAppProps = AppProps & {
   Component: NextPage
 }
 
-
+//default next _app.tsx page with Toaster fro notifications
 export default function MyApp(props: ExtendedAppProps): ReactNode {
   const {Component, pageProps} = props;
   return <>

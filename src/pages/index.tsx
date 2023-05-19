@@ -8,25 +8,35 @@ import { ethers } from 'ethers';
 import { useAccounts } from '@/storages/accounts';
 import { ChainPairType, TokenPairType, TokensAddressesPairType } from '@/types';
 
+//init lifi sdk
+const lifi = new LIFI();
 
-const lify = new LIFI();
-
+//options for swap
 const routeOptions: RouteOptions = {
   slippage: 5 / 100, // 5%
   order: 'RECOMMENDED'
 }
 
 export default function Home() {
+  //private keys store
   const {privateKeys, addPrivateKey} = useAccounts();
+
+  //chains stored in state
   const [chains, setChains] = useState<ExtendedChain[]>([]);
+
+  //chosen chins pair
   const [chainPair, setChainPair] = useState<ChainPairType>({
     fromChainId: 1,
     toChainId: 1,
   })
+
+  //chosen token addresses pair
   const [tokenAddressesPair, setTokenAddressesPair] = useState<TokensAddressesPairType>({
     fromTokenAddress: '',
     toTokenAddress: '',
   })
+
+  //tokens, related to chosen chains
   const [tokenPair, setTokenPair] = useState<TokenPairType>({
     fromTokens: [],
     toTokens: []
@@ -34,20 +44,34 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      setChains(await lify.getChains());
+      setChains(await lifi.getChains());
     })();
 
-  }, [lify])
+  }, [lifi])
 
 
+  //execute swap fn
   const executeSwap = useCallback(async () => {
+    //init rpc url for chain
     const rpcUrl = chains.find(el => el.id === chainPair.fromChainId)?.metamask.rpcUrls[0];
+
+    //init provider for current chain
     const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+    //init user wallet for current provider and private key
     const wallet = new ethers.Wallet(privateKeys[0], provider);
+
+    //amount for swap
     const amountInput = document.getElementById('amount_input_id') as HTMLInputElement;
+
+    // search for chosen Token object type from @lifi/sdk
     const fromToken = tokenPair.fromTokens.find(token => token.address === tokenAddressesPair.fromTokenAddress)
     if (amountInput && fromToken) {
+
+      //parse amount with decimal param
       const amount = (Number(amountInput.value) * Math.pow(10, fromToken.decimals)).toString();
+
+      //params for search route for swap
       const routesRequest: RoutesRequest = {
         fromChainId: chainPair.fromChainId,
         fromAmount: amount,
@@ -56,9 +80,10 @@ export default function Home() {
         toTokenAddress: tokenAddressesPair.toTokenAddress,
         options: routeOptions,
       }
-      const routes = await lify.getRoutes(routesRequest);
-      const route = routes.routes[2];
+      const routes = await lifi.getRoutes(routesRequest);
+      const route = routes.routes[0];
       if (route) {
+        //params for approve not native  chain tokens
         const approveRequest: ApproveTokenRequest = {
           signer: wallet,
           token: fromToken,
@@ -66,10 +91,16 @@ export default function Home() {
           amount: route.steps[0].estimate.fromAmount,
           infiniteApproval: true
         }
-        await lify.approveToken(approveRequest)
-        const txData = await lify.executeRoute(wallet, route);
+        await lifi.approveToken(approveRequest)
+
+        //execute chosen route
+        const txData = await lifi.executeRoute(wallet, route);
         console.log({ txData });
+
+        //extract tx hash from last lifi execution step
         const txHash = txData.steps[txData.steps.length - 1].execution?.process[0].txHash;
+
+        //if have txHash, show it with toast
         if (txHash) {
           toast.success(txHash)
         }
@@ -79,14 +110,17 @@ export default function Home() {
     }
   }, [chainPair, tokenAddressesPair])
 
+
+  //extract token pair for chosen chains
   const getTokenPair = useCallback(async () => {
-    const { tokens } = await lify.getTokens({chains: [chainPair.fromChainId, chainPair.toChainId]});
+    const { tokens } = await lifi.getTokens({chains: [chainPair.fromChainId, chainPair.toChainId]});
     if(tokens) {
       setTokenPair({fromTokens: tokens[chainPair.fromChainId], toTokens: tokens[chainPair.toChainId]})
     }
   }, [chainPair])
 
 
+  //add private key address to store
   const addPrivateKeyHandler = () => {
     const inputData = document.getElementById('private_key_input') as HTMLInputElement;
     if (inputData) {
@@ -94,6 +128,8 @@ export default function Home() {
     }
   }
 
+
+  //simple form
   return (
     <main>
 

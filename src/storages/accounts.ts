@@ -9,6 +9,16 @@ type Accounts = {
   removePrivateKey: (privateKey: string) => void;
 }
 
+/**
+ * Private keys storage, created with zoostand.
+ * @param {Accounts} privateKeys - private keys array.
+ * @param addPrivateKey - Function to add private key in array.
+ *        @param {string} privateKey - private key in string format.
+ * @param removePrivateKey - Function to remove private key from array.
+ *        @param {string} privateKey - private key in string format.
+ *
+ * Persist name option for storage name. By default it is localStorage
+ */
 export const useAccounts = create<Accounts>()(
   persist(
     (set, get) => ({
