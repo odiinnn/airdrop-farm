@@ -1,7 +1,20 @@
 import React, {ReactNode} from 'react';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import {NextPage} from 'next';
 import {AppProps} from 'next/app';
+import axios from 'axios';
+
+import '../styles/styles.css'
+
+
+//axios interceptors for errors handling
+axios.interceptors.response.use(
+  res => res,
+  err => {
+    console.log(err);
+    toast.error(`Error: ${err.message}. Check console for more info.`)
+  }
+)
 
 
 type ExtendedAppProps = AppProps & {
