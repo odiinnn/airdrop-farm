@@ -10,6 +10,7 @@ import { useAccounts } from '@/storages/accounts';
 import {Token} from '@/types';
 import { ChainPairType, TokenPairType, TokensAddressesPairType } from '@/types';
 import { logger } from '@/utils/logger';
+import { sleep } from '@/utils/misc';
 
 
 //init lifi sdk
@@ -56,7 +57,7 @@ export default function Home() {
   }, [lifi])
 
 
-  const preExecuteChecks = (): [HTMLInputElement, Token] | boolean => {
+  const preExecuteChecks = (): [HTMLInputElement, Token, number] | boolean => {
     //check if user have accounts
     if (!Array.isArray(privateKeys) || privateKeys.length === 0) {
       logger.debug('Private keys', privateKeys)
@@ -72,6 +73,10 @@ export default function Home() {
       return false;
     }
 
+    //repeat element
+    const repeat = document.getElementById('repeat_time_input_id') as HTMLInputElement;
+    const repeatInSecs = repeat && repeat.value && Number(repeat.value) ? Number(repeat.value) * 1000 : 0; // 1000 - s to ms
+
     //amount for swap
     const amountInput = document.getElementById('amount_input_id') as HTMLInputElement;
 
@@ -79,7 +84,7 @@ export default function Home() {
     const fromToken = tokenPair.fromTokens.find(token => token.address === tokenAddressesPair.fromTokenAddress)
 
     if (amountInput.value && fromToken) {
-      return [amountInput, fromToken];
+      return [amountInput, fromToken, repeatInSecs];
     } else {
       toast.error('No Amount or From Token Sir!')
       logger.error('No Amount or From Token')
@@ -94,7 +99,7 @@ export default function Home() {
     const preExecuteData = preExecuteChecks();
     if (typeof preExecuteData === 'boolean') return;
 
-    const [amountInput, fromToken] = preExecuteData;
+    const [amountInput, fromToken, repeatInSecs] = preExecuteData;
 
     //init rpc url for chain
     const rpcUrl = chains.find(el => el.id === chainPair.fromChainId)?.metamask.rpcUrls[0];
@@ -133,39 +138,43 @@ export default function Home() {
         logger.trace('Routes: ', routes)
         const route = routes.routes[0];
         logger.trace('Chosen route: ', route)
-        if (route) {
-          //params for approve not native  chain tokens
-          const approveRequest: ApproveTokenRequest = {
-            signer: wallet,
-            token: fromToken,
-            approvalAddress: route.steps[0].estimate.approvalAddress,
-            amount: route.steps[0].estimate.fromAmount,
-            infiniteApproval: true
-          }
-          logger.trace('Params for approve token: ', approveRequest)
-          await lifi.approveToken(approveRequest)
-
-          logger.trace('Successful approved or approved amount more than needed')
-
-          //execute chosen route
-          const txData = await lifi.executeRoute(wallet, route);
-          logger.trace('Tx data:', txData)
-
-          //extract tx hash from last lifi execution step
-          const txHash = txData.steps[txData.steps.length - 1].execution?.process[0].txHash;
-
-          //if have txHash, show it with toast
-          if (txHash) {
-            logger.info('Tx hash', txHash)
-            toast.success(txHash)
-          } else {
-            logger.warn('Do not find tx hash. Tx data: ', txData)
-          }
-        } else {
+        if (!route){
           logger.error('No available routes for this pair or top up balance')
-          toast.error('No available routes for this pair or top up balance')
+          toast.error('No available routes for this pair or top up balance');
+          return;
         }
-      }catch (e: any) {
+        //params for approve not native  chain tokens
+        const approveRequest: ApproveTokenRequest = {
+          signer: wallet,
+          token: fromToken,
+          approvalAddress: route.steps[0].estimate.approvalAddress,
+          amount: route.steps[0].estimate.fromAmount,
+          infiniteApproval: true
+        }
+        logger.trace('Params for approve token: ', approveRequest)
+        await lifi.approveToken(approveRequest)
+
+        logger.trace('Successful approved or approved amount more than needed')
+
+        //execute chosen route
+        const txData = await lifi.executeRoute(wallet, route);
+        logger.trace('Tx data:', txData)
+
+        //extract tx hash from last lifi execution step
+        const txHash = txData.steps[txData.steps.length - 1].execution?.process[0].txHash;
+
+        //if have txHash, show it with toast
+        if (txHash) {
+          logger.info('Tx hash', txHash)
+          toast.success(txHash)
+        } else {
+          logger.warn('Do not find tx hash. Tx data: ', txData)
+        }
+        if (repeatInSecs) {
+          await sleep(repeatInSecs);
+          await executeSwap();
+        }
+      } catch (e: any) {
         logger.error('Error while execute', e)
         toast.error(`Error: ${e?.message}. See console for more info.`)
       }
@@ -317,6 +326,10 @@ export default function Home() {
           <p>Input amount</p>
           <input placeholder={'0.01'} id={'amount_input_id'}/>
           <button onClick={executeSwap}>Swap</button>
+        </div>
+        <div className={'column'}>
+          <p>Repeat in(secs):</p>
+          <input placeholder={'600'} type={'number'} id={'repeat_time_input_id'}/>
         </div>
       </div>
 
