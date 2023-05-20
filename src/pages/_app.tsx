@@ -4,6 +4,8 @@ import {NextPage} from 'next';
 import {AppProps} from 'next/app';
 import axios from 'axios';
 
+import {logger} from '@/utils/logger'
+
 import '../styles/styles.css'
 
 
@@ -11,7 +13,7 @@ import '../styles/styles.css'
 axios.interceptors.response.use(
   res => res,
   err => {
-    console.log(err);
+    logger.error('Axios error: ', err)
     toast.error(`Error: ${err.message}. Check console for more info.`)
   }
 )

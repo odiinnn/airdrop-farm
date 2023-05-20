@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import { useAccounts } from '@/storages/accounts';
 import {Token} from '@/types';
 import { ChainPairType, TokenPairType, TokensAddressesPairType } from '@/types';
+import { logger } from '@/utils/logger';
 
 
 //init lifi sdk
@@ -57,13 +58,16 @@ export default function Home() {
   const preExecuteChecks = (): [HTMLInputElement, Token] | boolean => {
     //check if user have accounts
     if (!Array.isArray(privateKeys) || privateKeys.length === 0) {
+      logger.debug('Private keys', privateKeys)
       toast.error('No Accounts Sir!')
+      logger.error('No accounts')
       return false;
     }
 
     //check if user have chosen accounts
     if (privateKeys.filter(_prK => _prK.isChosen).length === 0) {
       toast.error('No Chosen Accounts Sir!')
+      logger.error('No chosen accounts')
       return false;
     }
 
@@ -77,6 +81,7 @@ export default function Home() {
       return [amountInput, fromToken];
     } else {
       toast.error('No Amount or From Token Sir!')
+      logger.error('No Amount or From Token')
       return false;
     }
   }
@@ -131,20 +136,22 @@ export default function Home() {
 
           //execute chosen route
           const txData = await lifi.executeRoute(wallet, route);
-          console.log({ txData });
+          logger.info('Tx data:', txData)
 
           //extract tx hash from last lifi execution step
           const txHash = txData.steps[txData.steps.length - 1].execution?.process[0].txHash;
 
           //if have txHash, show it with toast
           if (txHash) {
+            logger.info('Tx hash', txHash)
             toast.success(txHash)
           }
         } else {
+          logger.error('No available routes for this pair or top up balance')
           toast.error('No available routes for this pair or top up balance')
         }
       }catch (e: any) {
-        console.log(e)
+        logger.error('Error while execute', e)
         toast.error(`Error: ${e?.message}. See console for more info.`)
       }
     }
