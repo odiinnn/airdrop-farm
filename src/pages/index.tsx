@@ -97,20 +97,26 @@ export default function Home() {
 
     //init rpc url for chain
     const rpcUrl = chains.find(el => el.id === chainPair.fromChainId)?.metamask.rpcUrls[0];
+    logger.trace('Rpc url:', rpcUrl)
 
     //init provider for current chain
     const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+    logger.trace('Provider', provider)
 
     for (const privateKey of privateKeys) {
+      logger.trace('Start execute for address', new ethers.Wallet(privateKey.data).address)
       if (!privateKey.isChosen) {
+        logger.trace('Skip wallet bcz not chosen', new ethers.Wallet(privateKey.data).address)
         continue;
       }
       try {
         //init user wallet for current provider and private key
         const wallet = new ethers.Wallet(privateKey.data, provider);
+        logger.trace('Start swap for address', wallet.address)
 
         //parse amount with decimal param
         const amount = (Number(amountInput.value) * Math.pow(10, fromToken.decimals)).toString();
+        logger.trace('Amount is', amount)
 
         //params for search route for swap
         const routesRequest: RoutesRequest = {
@@ -121,8 +127,11 @@ export default function Home() {
           toTokenAddress: tokenAddressesPair.toTokenAddress,
           options: routeOptions,
         }
+        logger.trace('Params for routes request: ', routesRequest)
         const routes = await lifi.getRoutes(routesRequest);
+        logger.trace('Routes: ', routes)
         const route = routes.routes[0];
+        logger.trace('Chosen route: ', route)
         if (route) {
           //params for approve not native  chain tokens
           const approveRequest: ApproveTokenRequest = {
@@ -132,11 +141,14 @@ export default function Home() {
             amount: route.steps[0].estimate.fromAmount,
             infiniteApproval: true
           }
+          logger.trace('Params for approve token: ', approveRequest)
           await lifi.approveToken(approveRequest)
+
+          logger.trace('Successful approved or approved amount more than needed')
 
           //execute chosen route
           const txData = await lifi.executeRoute(wallet, route);
-          logger.info('Tx data:', txData)
+          logger.trace('Tx data:', txData)
 
           //extract tx hash from last lifi execution step
           const txHash = txData.steps[txData.steps.length - 1].execution?.process[0].txHash;
@@ -145,6 +157,8 @@ export default function Home() {
           if (txHash) {
             logger.info('Tx hash', txHash)
             toast.success(txHash)
+          } else {
+            logger.warn('Do not find tx hash. Tx data: ', txData)
           }
         } else {
           logger.error('No available routes for this pair or top up balance')
