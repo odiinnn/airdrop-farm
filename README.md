@@ -17,7 +17,7 @@ Template for auto swap with @lifi/sdk throw their contracts build with Next.js
 
 - [ ] Beatify home page
 - [x] Multi accounts
-- [ ] Logger
+- [x] Logger
 - [x] Error handler
 - [ ] Add orbiter-sdk (https://www.npmjs.com/package/orbiter-sdk)
 - [ ] Add timeout for repeating swap / cron repeat
