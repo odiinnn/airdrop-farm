@@ -1,18 +1,76 @@
+@font-face {
+    font-family: 'Bruno';
+    src: url(/fonts/BrunoAceSC.ttf);
+}
+
+
+body {
+    background: #dedada;
+    font-family: 'Bruno', sans-serif;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+input {
+    border: 2px solid black;
+    padding: 0.5rem;
+    border-radius: 1rem;
+}
+
+button, select {
+    border: none;
+    background: black;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 10px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
 .grid {
-    width: fit-content;
-    margin-top: 4rem;
     display: grid;
-    grid-template-columns: repeat(2, auto);
+    grid-template-columns: repeat(3, 32%);
     gap: 10px;
 }
 
 .address_wrapper {
+    display: flex;
+    align-items: center;
+    height: fit-content;
+    background: white;
     transition: all 0.5s ease;
     cursor: pointer;
-    width: fit-content;
     padding: 6px 12px;
     border: 2px solid black;
     border-radius: 2rem;
+    gap: 20px;
+}
+.address_wrapper p {
+    margin: 0;
+    background: black;
+    color: white;
+    padding: 4px;
+    border-radius: 10px;
 }
 
 .address_wrapper.chosen {

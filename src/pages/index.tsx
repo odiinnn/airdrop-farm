@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 import LIFI, { ExtendedChain, RoutesRequest } from '@lifi/sdk';
 import { ApproveTokenRequest } from '@lifi/sdk/dist/allowance';
 import { RouteOptions } from '@lifi/types/dist/api';
@@ -22,7 +23,7 @@ const routeOptions: RouteOptions = {
 
 export default function Home() {
   //private keys store
-  const {privateKeys, addPrivateKey, setIsChosen} = useAccounts();
+  const {privateKeys, addPrivateKey, setIsChosen, removePrivateKey} = useAccounts();
 
   //chains stored in state
   const [chains, setChains] = useState<ExtendedChain[]>([]);
@@ -191,9 +192,12 @@ export default function Home() {
     const inputData = document.getElementById('private_key_input') as HTMLInputElement;
     if (inputData) {
       addPrivateKey(inputData.value)
+      inputData.value = ''
     }
   }
 
+
+  //chose chain select handler
   const choseChain = async (event: ChangeEvent<HTMLSelectElement>, direction: 'from' | 'to') => {
     setChainPair(prevState => ({
       fromChainId: direction === 'from' ? Number(event.target.value) : prevState.fromChainId,
@@ -201,6 +205,8 @@ export default function Home() {
     }))
   }
 
+
+  //chose token address select handler
   const choseTokenAddress = async (event: ChangeEvent<HTMLSelectElement>, direction: 'from' | 'to') => {
     setTokenAddressesPair(prevState => ({
       fromTokenAddress: direction === 'from' ? event.target.value : prevState.fromTokenAddress,
@@ -213,49 +219,26 @@ export default function Home() {
   }, [chainPair])
 
 
+  //get chain logo by id
+  const getChainLogoById = (id: number): string => {
+    const chain = chains.find(_chain => _chain.id === id);
+    return chain?.logoURI || '';
+  }
+
+  //remove private key handler
+  const removePrivateKeyHandler = (privateKey: string) => {
+    return () => removePrivateKey(privateKey)
+  }
+
+
   //simple form
   return (
     <main>
 
-      <div>
+      <div className={'column'}>
         <p>Add Address</p>
         <input placeholder={'Private Key'} id={'private_key_input'}/>
         <button onClick={addPrivateKeyHandler}>Add</button>
-      </div>
-
-      <div>
-        From:
-        <select onChange={event => choseChain(event, 'from')} defaultValue={chains[0]?.id}>
-          {chains.map(chain => <option key={chain.key} value={chain.id}>{chain.name}</option>)}
-        </select>
-
-        To:
-        <select onChange={event => choseChain(event, 'to')} defaultValue={chains[0]?.id}>
-          {chains.map(chain => <option key={chain.key} value={chain.id}>{chain.name}</option>)}
-        </select>
-
-        <div>From: {chainPair.fromChainId} To: {chainPair.toChainId}</div>
-      </div>
-      <div>
-        From Currency:
-        <select
-          onChange={event => choseTokenAddress(event, 'from')}
-        >
-          {tokenPair.fromTokens?.map(token => <option key={token.address} value={token.address}>{token.symbol}</option>)}
-        </select>
-
-        To Currency:
-        <select
-          onChange={event => choseTokenAddress(event, 'to')}
-        >
-          {tokenPair.toTokens?.map(token => <option key={token.address} value={token.address}>{token.symbol}</option>)}
-        </select>
-
-        <div>From: {tokenAddressesPair.fromTokenAddress} To: {tokenAddressesPair.toTokenAddress}</div>
-
-        <p>Input amount</p>
-        <input placeholder={'0.01'} id={'amount_input_id'}/>
-        <button onClick={executeSwap}>Swap</button>
       </div>
 
       <div className={'grid'}>
@@ -264,10 +247,79 @@ export default function Home() {
             className={`address_wrapper ${privateKey.isChosen && 'chosen'}`}
             key={`chose-addr-${privateKey.data}`}
             onClick={() => setIsChosen(privateKey.data, !privateKey.isChosen)}>
-              {new ethers.Wallet(privateKey.data).address}
+            {new ethers.Wallet(privateKey.data).address}
+            <p onClick={removePrivateKeyHandler(privateKey.data)}>del</p>
           </div>
         )}
       </div>
+
+      <div className={'column'}>
+        <div className={'row'}>
+          <div className={'column'}>
+            <p>From:</p>
+            <select onChange={event => choseChain(event, 'from')} defaultValue={chains[0]?.id}>
+              {chains.map(chain => <option key={chain.key} value={chain.id}>{chain.name}</option>)}
+            </select>
+          </div>
+          <div className={'column'}>
+            <p>To:</p>
+            <select onChange={event => choseChain(event, 'to')} defaultValue={chains[0]?.id}>
+              {chains.map(chain => <option key={chain.key} value={chain.id}>{chain.name}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className={'row'}>
+          <div className={'column'}>
+            <p>From:</p>
+            <Image
+              src={getChainLogoById(chainPair.fromChainId)}
+              loader={() => getChainLogoById(chainPair.fromChainId)}
+              width={40}
+              height={40}
+              alt={''}/>
+          </div>
+          <div className={'column'}>
+            <p>To:</p>
+            <Image
+              src={getChainLogoById(chainPair.toChainId)}
+              loader={() => getChainLogoById(chainPair.toChainId)}
+              width={40}
+              height={40}
+              alt={''}/>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className={'row'}>
+          <div className={'column'}>
+            <p>From Currency:</p>
+            <select
+              onChange={event => choseTokenAddress(event, 'from')}
+            >
+              {tokenPair.fromTokens?.map(token => <option key={token.address} value={token.address}>{token.symbol}</option>)}
+            </select>
+          </div>
+          <div className={'column'}>
+            <p>To Currency:</p>
+            <select
+              onChange={event => choseTokenAddress(event, 'to')}
+            >
+              {tokenPair.toTokens?.map(token => <option key={token.address} value={token.address}>{token.symbol}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className={'column'}>
+          <p>From: {tokenAddressesPair.fromTokenAddress}</p>
+          <p>To: {tokenAddressesPair.toTokenAddress}</p>
+        </div>
+
+        <div className={'column'}>
+          <p>Input amount</p>
+          <input placeholder={'0.01'} id={'amount_input_id'}/>
+          <button onClick={executeSwap}>Swap</button>
+        </div>
+      </div>
+
 
     </main>
   )

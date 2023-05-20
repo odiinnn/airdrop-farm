@@ -11,11 +11,13 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 Fill form and click swap button. If everything is fine - you will see success notify.
 Template for auto swap with @lifi/sdk throw their contracts build with Next.js
 
+![Application screen](./.github/img.png)
+
 
 
 # TODO
 
-- [ ] Beatify home page
+- [x] Beatify home page
 - [x] Multi accounts
 - [x] Logger
 - [x] Error handler
