@@ -6,15 +6,21 @@ import { ApproveTokenRequest } from '@lifi/sdk/dist/allowance';
 import { RouteOptions } from '@lifi/types/dist/api';
 import { ethers } from 'ethers';
 
+import { AddressCard } from '@/components/address-card';
 import { useAccounts } from '@/storages/accounts';
 import {Token} from '@/types';
 import { ChainPairType, TokenPairType, TokensAddressesPairType } from '@/types';
 import { logger } from '@/utils/logger';
 import { sleep } from '@/utils/misc';
 
+const isProductionMode = process.env.NEXT_PUBLIC_PUBLIC_MODE === 'true';
+
+const config = isProductionMode ? undefined : {
+  apiUrl: 'https://staging.li.quest/v1/'
+};
 
 //init lifi sdk
-const lifi = new LIFI();
+const lifi = new LIFI(config);
 
 //options for swap
 const routeOptions: RouteOptions = {
@@ -23,8 +29,11 @@ const routeOptions: RouteOptions = {
 }
 
 export default function Home() {
+
+  logger.trace('Production mode: ', isProductionMode)
+
   //private keys store
-  const {privateKeys, addPrivateKey, setIsChosen, removePrivateKey} = useAccounts();
+  const {privateKeys, addPrivateKey, removePrivateKey} = useAccounts();
 
   //chains stored in state
   const [chains, setChains] = useState<ExtendedChain[]>([]);
@@ -200,7 +209,13 @@ export default function Home() {
   const addPrivateKeyHandler = () => {
     const inputData = document.getElementById('private_key_input') as HTMLInputElement;
     if (inputData) {
-      addPrivateKey(inputData.value)
+      try {
+        const _wallet = new ethers.Wallet(inputData.value);
+        addPrivateKey(_wallet.privateKey);
+      } catch (e) {
+        logger.error('Error: not correct private key - ', inputData.value);
+        toast.error('Not valid private key')
+      }
       inputData.value = ''
     }
   }
@@ -252,13 +267,13 @@ export default function Home() {
 
       <div className={'grid'}>
         {privateKeys.map(privateKey =>
-          <div
-            className={`address_wrapper ${privateKey.isChosen && 'chosen'}`}
-            key={`chose-addr-${privateKey.data}`}
-            onClick={() => setIsChosen(privateKey.data, !privateKey.isChosen)}>
-            {new ethers.Wallet(privateKey.data).address}
-            <p onClick={removePrivateKeyHandler(privateKey.data)}>del</p>
-          </div>
+          <AddressCard
+            key={privateKey.data}
+            privateKey={privateKey}
+            tokenAddressesPair={tokenAddressesPair}
+            chains={chains}
+            chainPair={chainPair}
+            tokenPair={tokenPair}/>
         )}
       </div>
 

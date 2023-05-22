@@ -55,17 +55,19 @@ button, select {
 
 .address_wrapper {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    flex-direction: column;
     height: fit-content;
     background: white;
     transition: all 0.5s ease;
     cursor: pointer;
     padding: 6px 12px;
     border: 2px solid black;
-    border-radius: 2rem;
+    border-radius: 1rem;
     gap: 20px;
 }
 .address_wrapper p {
+    align-self: flex-end;
     margin: 0;
     background: black;
     color: white;

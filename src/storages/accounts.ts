@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type PrivateKeyObjectType = {
+export type PrivateKeyObjectType = {
   data: string;
   isChosen: boolean;
 }

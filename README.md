@@ -1,5 +1,8 @@
 # Getting Started
 
+Update .env
+Set ```NEXT_PUBLIC_PUBLIC_MODE=true``` if tou want run in production mode or ```NEXT_PUBLIC_PUBLIC_MODE=false``` if you want start in test mode.
+
 First, run the development server:
 
 ```bash
