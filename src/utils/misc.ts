@@ -54,3 +54,11 @@ export const getUserProvider = (url: string) => {
 export const getUserWallet = (privateKey: string, rpcUrl?: string) => {
   return new ethers.Wallet(privateKey, rpcUrl ? getUserProvider(rpcUrl) : undefined);
 }
+
+/**
+ * Return random value.
+ * @param {number} maxValue - max available random value.
+ */
+export const getRandomValue = (maxValue: number) => {
+  return Math.floor(Math.random() * maxValue) + 0.000001; // set to not be zero
+}

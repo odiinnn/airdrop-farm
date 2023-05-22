@@ -78,3 +78,22 @@ button, select {
 .address_wrapper.chosen {
     border: 2px solid red;
 }
+
+input[type='checkbox'], input[type='range'] {
+    position: relative;
+    accent-color: black;
+}
+input[type='checkbox'] {
+    width: 20px;
+    aspect-ratio: 1/1;
+}
+input[type='checkbox']:checked:after {
+    content: 'Random On';
+}
+input[type='checkbox']:after {
+    left: 120%;
+    top: -20%;
+    position: absolute;
+    content: 'Random Off';
+    font-family: 'Bruno', sans-serif;
+}

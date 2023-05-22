@@ -11,10 +11,14 @@ import { useAccounts } from '@/storages/accounts';
 import {Token} from '@/types';
 import { ChainPairType, TokenPairType, TokensAddressesPairType } from '@/types';
 import { logger } from '@/utils/logger';
-import { sleep } from '@/utils/misc';
+import { getErc20Balance, getRandomValue, sleep } from '@/utils/misc';
 
+
+//is production mode on
 const isProductionMode = process.env.NEXT_PUBLIC_PUBLIC_MODE === 'true';
 
+
+//set lifi config proceeding mode
 const config = isProductionMode ? undefined : {
   apiUrl: 'https://staging.li.quest/v1/'
 };
@@ -30,10 +34,8 @@ const routeOptions: RouteOptions = {
 
 export default function Home() {
 
-  logger.trace('Production mode: ', isProductionMode)
-
   //private keys store
-  const {privateKeys, addPrivateKey, removePrivateKey} = useAccounts();
+  const {privateKeys, addPrivateKey} = useAccounts();
 
   //chains stored in state
   const [chains, setChains] = useState<ExtendedChain[]>([]);
@@ -56,6 +58,22 @@ export default function Home() {
     toTokens: []
   })
 
+
+  //random states
+  const [isRandomOn, setIsRandomOn] = useState<boolean>(false);
+  const [randomRange, setRandomRange] = useState<number>(0)
+
+
+  //handle random mode change
+  const handleRandomSwitch = () => {
+    setIsRandomOn(prevState => !prevState);
+  }
+
+  //handle random range change
+  const onRandomRangeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setRandomRange(Number(e.target.value));
+  }
+
   useEffect(() => {
     (async () => {
       const lifiChains = await lifi.getChains();
@@ -66,7 +84,7 @@ export default function Home() {
   }, [lifi])
 
 
-  const preExecuteChecks = (): [HTMLInputElement, Token, number] | boolean => {
+  const preExecuteChecks = useCallback((): [HTMLInputElement, Token, number] | boolean => {
     //check if user have accounts
     if (!Array.isArray(privateKeys) || privateKeys.length === 0) {
       logger.debug('Private keys', privateKeys)
@@ -82,6 +100,22 @@ export default function Home() {
       return false;
     }
 
+
+    //check user chain id and token addresses are the same
+    if (chainPair.fromChainId === chainPair.toChainId && tokenAddressesPair.fromTokenAddress === tokenAddressesPair.toTokenAddress) {
+      toast.error('The same tokens on the same blockchain cannot be used');
+      logger.error('The same tokens on the same blockchain cannot be used');
+      return false;
+    }
+
+
+    //check random not zero
+    if (isRandomOn && randomRange === 0) {
+      toast.error('Random cannot be zero');
+      logger.error('Random range is 0');
+      return false;
+    }
+
     //repeat element
     const repeat = document.getElementById('repeat_time_input_id') as HTMLInputElement;
     const repeatInSecs = repeat && repeat.value && Number(repeat.value) ? Number(repeat.value) * 1000 : 0; // 1000 - s to ms
@@ -92,13 +126,29 @@ export default function Home() {
     // search for chosen Token object type from @lifi/sdk
     const fromToken = tokenPair.fromTokens.find(token => token.address === tokenAddressesPair.fromTokenAddress)
 
-    if (amountInput.value && fromToken) {
+    if (((amountInput && amountInput.value) || isRandomOn) && fromToken) {
       return [amountInput, fromToken, repeatInSecs];
     } else {
       toast.error('No Amount or From Token Sir!')
       logger.error('No Amount or From Token')
+      logger.debug('Amount input', amountInput)
+      logger.debug('From token', fromToken)
+      logger.debug('Is random on - ', isRandomOn)
       return false;
     }
+  }, [privateKeys.length, tokenAddressesPair, isRandomOn, randomRange, chainPair]);
+
+  const amountForSwap = async (amountInput: HTMLInputElement, tokenDecimal: number, wallet: ethers.Wallet, tokenAddress: string): Promise<string> => {
+    if (!isRandomOn) return (Number(amountInput.value) * Math.pow(10, tokenDecimal)).toString();
+
+    const randomPercent = getRandomValue(randomRange) / 100;
+
+    logger.trace('Random is Accepted. Random is', `${randomPercent}%`);
+
+    const userBalance = Number(await getErc20Balance(tokenAddress, wallet));
+
+    return (Math.floor(userBalance * randomPercent)).toString();
+
   }
 
 
@@ -130,7 +180,7 @@ export default function Home() {
         logger.trace('Start swap for address', wallet.address)
 
         //parse amount with decimal param
-        const amount = (Number(amountInput.value) * Math.pow(10, fromToken.decimals)).toString();
+        const amount = await amountForSwap(amountInput, fromToken.decimals, wallet, fromToken.address);
         logger.trace('Amount is', amount)
 
         //params for search route for swap
@@ -148,8 +198,8 @@ export default function Home() {
         const route = routes.routes[0];
         logger.trace('Chosen route: ', route)
         if (!route){
-          logger.error('No available routes for this pair or top up balance')
-          toast.error('No available routes for this pair or top up balance');
+          logger.error('No available routes for this pair')
+          toast.error('No available routes for this pair');
           return;
         }
         //params for approve not native  chain tokens
@@ -189,7 +239,7 @@ export default function Home() {
       }
     }
 
-  }, [chainPair, tokenAddressesPair])
+  }, [chainPair, tokenAddressesPair, isRandomOn, randomRange])
 
 
   //extract token pair for chosen chains
@@ -248,12 +298,6 @@ export default function Home() {
     const chain = chains.find(_chain => _chain.id === id);
     return chain?.logoURI || '';
   }
-
-  //remove private key handler
-  const removePrivateKeyHandler = (privateKey: string) => {
-    return () => removePrivateKey(privateKey)
-  }
-
 
   //simple form
   return (
@@ -338,9 +382,21 @@ export default function Home() {
         </div>
 
         <div className={'column'}>
-          <p>Input amount</p>
-          <input placeholder={'0.01'} id={'amount_input_id'}/>
-          <button onClick={executeSwap}>Swap</button>
+          <input type={'checkbox'} checked={isRandomOn} onChange={handleRandomSwitch}/>
+        </div>
+        <div className={'column'}>
+        {isRandomOn
+          ? <>
+              <p>Input Random Range</p>
+              <input type={'range'} value={randomRange} onChange={onRandomRangeChange}/>
+              <p>{randomRange}%</p>
+            </>
+          : <>
+              <p>Input amount</p>
+              <input placeholder={'0.01'} id={'amount_input_id'}/>
+            </>
+        }
+        <button onClick={executeSwap}>Swap</button>
         </div>
         <div className={'column'}>
           <p>Repeat in(secs):</p>
