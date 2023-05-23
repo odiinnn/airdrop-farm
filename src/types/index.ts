@@ -1,3 +1,5 @@
+import { StargateTokenObjectType } from '@/constants/stargate-testnet-data';
+
 /**
  * Chain pair type.
  * Used for track chosen user chains
@@ -37,4 +39,13 @@ export type TokensAddressesPairType = {
 export type TokenPairType = {
   fromTokens: Token[];
   toTokens: Token[];
+}
+
+/**
+ * Token pair type.
+ * Used for track token, related for chosen chains
+ */
+export type StargateTokenPairType = {
+  fromTokens: StargateTokenObjectType[];
+  toTokens: StargateTokenObjectType[];
 }

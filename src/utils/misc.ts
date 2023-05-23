@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import {ethers} from 'ethers'
+import { constants, ethers } from 'ethers';
 
 import { logger } from '@/utils/logger';
 
@@ -61,4 +61,27 @@ export const getUserWallet = (privateKey: string, rpcUrl?: string) => {
  */
 export const getRandomValue = (maxValue: number) => {
   return Math.floor(Math.random() * maxValue) + 0.000001; // set to not be zero
+}
+
+
+/**
+ * Return random value.
+ * @param {ethers.Wallet} wallet - address wallet.
+ * @param {string} tokenAddress - token address for approval.
+ * @param {string} spender - token spender.
+ * @param {string} amount - token amount.
+ */
+export const approveAllTokens = async (wallet: ethers.Wallet, tokenAddress: string, spender: string, amount: string) => {
+  if (tokenAddress === zeroAddress) return;
+  const erc20Contract = new ethers.Contract(tokenAddress, erc20abi, wallet);
+  const tokenAllowance = parseInt((await getTokenAllowance(erc20Contract, spender))._hex, 16);
+  console.log(tokenAllowance, amount)
+  if (Number(tokenAllowance) < Number(amount)) {
+    const maxAmount = constants.MaxUint256.toString();
+    await erc20Contract.approve(spender, maxAmount);
+  }
+}
+
+export const getTokenAllowance = async (contract: ethers.Contract, spender: string) => {
+  return await contract.allowance(contract.signer.getAddress(), spender)
 }
