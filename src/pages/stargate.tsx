@@ -1,16 +1,14 @@
 import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
-import LIFI, { ExtendedChain, RoutesRequest } from '@lifi/sdk';
-import { ApproveTokenRequest } from '@lifi/sdk/dist/allowance';
-import { RouteOptions } from '@lifi/types/dist/api';
+import Link from 'next/link';
 import { ethers } from 'ethers';
 
 import { AddressCard } from '@/components/address-card';
 import { StargateTestnetChains, StargateTokenObjectType } from '@/constants/stargate-testnet-data';
 import { useAccounts } from '@/storages/accounts';
-import { StargateTokenPairType, Token } from '@/types';
-import { ChainPairType, TokenPairType, TokensAddressesPairType } from '@/types';
+import { StargateTokenPairType } from '@/types';
+import { ChainPairType, TokensAddressesPairType } from '@/types';
 import { logger } from '@/utils/logger';
 import { approveAllTokens, getErc20Balance, getRandomValue, sleep, zeroAddress } from '@/utils/misc';
 import { executeSwap as exSwap, executeSwapETH } from '@/utils/stargate';
@@ -21,13 +19,11 @@ export default function Home() {
   //private keys store
   const {privateKeys, addPrivateKey} = useAccounts();
 
-  //chains stored in state
-  const [chains, setChains] = useState<ExtendedChain[]>([]);
 
   //chosen chins pair
   const [chainPair, setChainPair] = useState<ChainPairType>({
-    fromChainId: 1,
-    toChainId: 1,
+    fromChainId: 10121,
+    toChainId: 10121,
   })
 
   //chosen token addresses pair
@@ -262,7 +258,7 @@ export default function Home() {
   //simple form
   return (
     <main>
-
+      <Link href={'/'}>Go to Lifi</Link>
       <div className={'column'}>
         <p>Add Address</p>
         <input placeholder={'Private Key'} id={'private_key_input'}/>
@@ -285,13 +281,13 @@ export default function Home() {
         <div className={'row'}>
           <div className={'column'}>
             <p>From:</p>
-            <select onChange={event => choseChain(event, 'from')} defaultValue={chains[0]?.id}>
+            <select onChange={event => choseChain(event, 'from')} defaultValue={StargateTestnetChains[0]?.layerZeroChainId}>
               {StargateTestnetChains.map(chain => <option key={chain.layerZeroChainId} value={chain.layerZeroChainId}>{chain.name}</option>)}
             </select>
           </div>
           <div className={'column'}>
             <p>To:</p>
-            <select onChange={event => choseChain(event, 'to')} defaultValue={chains[0]?.id}>
+            <select onChange={event => choseChain(event, 'to')} defaultValue={StargateTestnetChains[0]?.layerZeroChainId}>
               {StargateTestnetChains.map(chain => <option key={chain.layerZeroChainId} value={chain.layerZeroChainId}>{chain.name}</option>)}
             </select>
           </div>

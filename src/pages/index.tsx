@@ -1,6 +1,7 @@
 import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
+import Link from 'next/link';
 import LIFI, { ExtendedChain, RoutesRequest } from '@lifi/sdk';
 import { ApproveTokenRequest } from '@lifi/sdk/dist/allowance';
 import { RouteOptions } from '@lifi/types/dist/api';
@@ -302,7 +303,7 @@ export default function Home() {
   //simple form
   return (
     <main>
-
+      <Link href={'/stargate'}>Go to stargate</Link>
       <div className={'column'}>
         <p>Add Address</p>
         <input placeholder={'Private Key'} id={'private_key_input'}/>
